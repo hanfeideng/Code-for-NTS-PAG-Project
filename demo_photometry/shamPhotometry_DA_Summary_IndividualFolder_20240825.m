@@ -10,17 +10,15 @@ VariableNames = A0.Properties.VariableNames
 
 signal_t = seconds(A0.Time);
 
-signal_410{1} = A0{:,'ROI-1-_sig_410'};
-signal_470{1} = A0{:,'ROI-1-_sig_470'};
-signal_410{2} = A0{:,'ROI-2-_sig_410'};
-signal_470{2} = A0{:,'ROI-2-_sig_470'};
+signal_410{1} = A0{:,'ROI-2-_sig_410'};
+signal_470{1} = A0{:,'ROI-2-_sig_470'};
 Input_DIO_1_Bpod = A0{:,'Input_DIO-1-bpod'};
 
 trigger_evt0 = Input_DIO_1_Bpod;
 trigger_evt_ind = find(diff(trigger_evt0)>0)+1;
 trigger_evt = signal_t(trigger_evt_ind);
 
-channel = 2;
+channel = 1;
 
 % trial_sel{1} = []; % all trials
 trial_sel{1} = []; % selected trials,eg: 5:20
@@ -61,18 +59,11 @@ for k=1:channel
     figure('position',[200,200,1200,400])
     h = sgtitle([FileName,'; channel ',num2str(k)]);set(h,'interpreter','none','fontsize',10);
 
-    subplot(4,1,1)
-    hold on
-    plot(signal_t,signal_410{k},'g')
-    ylabel('Raw 410','FontSize',10);
-    subplot(4,1,2)
-    plot(signal_t,signal_410_fit{k},'k')
-    ylabel('Corrected 410','FontSize',10);
-    subplot(4,1,3)
+    subplot(2,1,1)
     hold on
     plot(signal_t,signal_470{k},'g')
     ylabel('Raw 470','FontSize',10);
-    subplot(4,1,4)
+    subplot(2,1,2)
     plot(signal_t,signal_470_fit{k},'k')
     ylabel('Corrected 470','FontSize',10);
 
@@ -154,7 +145,7 @@ for mm=channel
     sgtitle(['470nm; channel ',num2str(mm)],'interpreter','none','fontsize',12);
     h = [];
 
-    for j = 1:size(beh_F,2)
+    for j = 1:2
         % z-score the data
         baseline = mean(beh_F{mm,j}(:,time<0),2);
         baseline_mean = mean(baseline);
@@ -190,7 +181,7 @@ for mm=channel
         xlabel('Time (s)','FontSize',12)
         ylabel(['dF(zscore)'],'FontSize',12)
         xline(0,'k--','linewidth',1.5); % 画起始竖线
-        set(gca,'TickDir','out','xtick',-2:1:12,'ylim',[-5,4],'ytick',-5:1:4,'xlim',[-2,12],'FontSize',12,'box','off');
+        set(gca,'TickDir','out','xtick',-2:1:12,'ylim',[-10,10],'ytick',-10:2:10,'xlim',[-2,12],'FontSize',12,'box','off');
     end
 
     linkaxes([h],'xy');
