@@ -1,6 +1,6 @@
 # Analysis Code for NTS-PAG Project
 
-This repository contains the analysis code for the study **“A brainstem circuit underlying vagal modulation of somatic pain and affective states”**  
+This repository contains the analysis code for the study **“A brainstem pathway underlying vagal modulation of somatic pain and affective states”**  
 It includes MATLAB scripts for behavioral and neural data analysis, and Python scripts for tracking of the pupil size.
 
 ---
