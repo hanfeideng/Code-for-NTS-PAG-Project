@@ -14,7 +14,7 @@ if isempty(fieldnames(S))  % If settings file was an empty struct, populate stru
     
     S.GUI.PreGoTrialNum = 1;
     
-    S.ITI = 22;
+    S.ITI = 50;
     S.ITI_min=S.ITI-1; S.ITI_max=S.ITI+2;
     S.SoundDuration = 1.0;
     

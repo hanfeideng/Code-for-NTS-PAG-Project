@@ -1,10 +1,11 @@
-function FearConditionD
+        function FearCondition0_Ima
 
 % SETUP
 % > Connect the water valve in the box to Bpod Port#1.
 % > Connect the shock box.
 % > Lick: Bpod Port#1
 % > Hanfei updated 02/25/2023
+%              
 
 global BpodSystem
 
@@ -16,24 +17,31 @@ if isempty(fieldnames(S))  % If settings file was an empty struct, populate stru
     S.GUI.VideoDuration = 2;
     S.GUI.CueDuration = 5;
     
-    S.SessionTrialNum = 1000;
+    S.SessionTrialNum = 1000; 
     
-    S.GUI.TrainingLevel = 1; % Configurable training level
+    S.GUI.TrainingLevel = 2; % Configurable training level #1:no shock-;       2:shock+
     S.GUIMeta.TrainingLevel.Style = 'popupmenu'; % the GUIMeta field is used by the ParameterGUI plugin to customize UI objects.
-    S.GUIMeta.TrainingLevel.String = {'CS only','Conditioning'};
+    S.GUIMeta.TrainingLevel.String = {'CS only','Conditioning'};                           
     
     S.CueDelay = 1; % the time from cue to response
     S.GUI.US_Delay = 0; % the time from cue to response
-    S.ITI = 60;
-    S.ITI_min=S.ITI-5; S.ITI_max=S.ITI+5;
+    S.ITI = 14;
+    S.ITI_min=S.ITI-2; S.ITI_max=S.ITI+2;
 
     
-    S.trial_seq = [0, 0]; % [0,2] 0 for shock; 2 for neutral
-    % S.trial_seq = [0, 0]; % shock only
+%     S.trial_seq = repmat([0,2],1,5); % [0,2] 0 for CS+,4k ; 2 for CS-,10k
+      S.trial_seq = [zeros(1,100)];
+%       S.trial_seq = [2*ones(1,100)];
+%     S.trial_seq = [0,0,0,0,2,2,2,2]; % CS+ only
     
     S.Laser = 0; %0,1
     S.LaserDuration = 1; % the duration of laser stimulation
     S.LaserDelayFromTrialOnset = 0; % the onset of laser stimulation from CS onset
+    
+    S.Imaging = 1; % 1, image for this session; 0, no image
+    S.ImagingDuration = 25; % the duration of imaging stimulation
+    S.ImagingPre = 3; % imaging duration before CS (baseline period)
+    image_seq_type = [1,1]; % [0,1] sequence of image trials (1, do the image; 0, do not image)
     
 end
 
@@ -55,6 +63,13 @@ if S.Laser
     seq_type = [1,0];
     for ii=1:length(seq_type):MaxTrials
         LaserTrial(ii:ii+length(seq_type)-1) = seq_type(randperm(length(seq_type)));
+    end
+end
+
+ImagingTrial = zeros(1,MaxTrials);
+if S.Imaging
+    for ii= 1:length(image_seq_type):MaxTrials
+        ImagingTrial(ii:ii+length(image_seq_type)-1) = image_seq_type;
     end
 end
 
@@ -82,14 +97,21 @@ GoNoGoOutcomePlot(BpodSystem.GUIHandles.SideOutcomePlot,'init',TrialTypes);
 BpodSystem.SoftCodeHandlerFunction = 'SoftCodeHandler_PlaySoundX';
 
 SF = 192000; % Sound card sampling rate
-SinWaveFreq1 = 3000;
+SinWaveFreq1 = 10000; % CS-
 sounddata1 = GenerateSineWave(SF, SinWaveFreq1, S.GUI.CueDuration); % Sampling freq (hz), Sine frequency (hz), duration (s)
-SinWaveFreq2 = 3000;
+ind0=arrayfun(@(x)(SF*0.2+1:SF)+x,1:SF:length(sounddata1),'UniformOutput',false); ind0=cell2mat(ind0);
+% ind0=arrayfun(@(x)(SF*0.2+1:SF/2)+x,1:SF/2:length(sounddata1),'UniformOutput',false); ind0=cell2mat(ind0);
+sounddata1(ind0) = 0;
+
+SinWaveFreq2 = 4000; % CS+
 sounddata2 = GenerateSineWave(SF, SinWaveFreq2, S.GUI.CueDuration); % Sampling freq (hz), Sine frequency (hz), duration (s)
+ind0=arrayfun(@(x)(SF*0.2+1:SF)+x,1:SF:length(sounddata1),'UniformOutput',false); ind0=cell2mat(ind0);
+% ind0=arrayfun(@(x)(SF*0.2+1:SF/2)+x,1:SF/2:length(sounddata2),'UniformOutput',false); ind0=cell2mat(ind0);
+sounddata2(ind0) = 0;
 
 % Program sound server
 PsychToolboxSoundServer('init')
-PsychToolboxSoundServer('Load', 1, 0.12*sounddata1);
+PsychToolboxSoundServer('Load', 1, 0.08*sounddata1);
 PsychToolboxSoundServer('Load', 2, 0.12*sounddata2);
 
 %% Main trial loop
@@ -102,16 +124,16 @@ for currentTrial = 1:MaxTrials
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
     
     switch TrialTypes(currentTrial) % Determine trial-specific state matrix fields
-        case 2 % neutral trial
+        case 2 % CS-
             sound_arg = {'SoftCode', 1};
             Tup_Action = 'Neutral';
-        case 0 % punishment trial            
+        case 0 % CS+            
             sound_arg = {'SoftCode', 2};
             Tup_Action = 'Punishment';
     end
     
-    if LaserTrial(currentTrial)
-        laser_arg = {'GlobalTimerTrig', 2};
+    if ImagingTrial(currentTrial)
+        laser_arg = {'GlobalTimerTrig', 1};
     else
         laser_arg = {};
     end
@@ -119,30 +141,30 @@ for currentTrial = 1:MaxTrials
     if S.GUI.TrainingLevel==1
         shock_arg = {};
     elseif S.GUI.TrainingLevel==2
-        shock_arg = {'PWM5', 255};
+        shock_arg = {'PWM6', 255};
     end
     
     sma = NewStateMatrix(); % Assemble state matrix
     
-    sma = SetGlobalTimer(sma, 'TimerID', 1, 'Duration', S.GUI.VideoDuration, 'OnsetDelay', 0, 'Channel', 'Wire1');
+    sma = SetGlobalTimer(sma, 'TimerID', 1, 'Duration', S.ImagingDuration, 'OnsetDelay', 1, 'Channel', 'Wire1');
     sma = SetGlobalTimer(sma, 'TimerID', 2, 'Duration', S.LaserDuration, 'OnsetDelay', S.LaserDelayFromTrialOnset, 'Channel', 'BNC1');
     
-    sma = AddState(sma, 'Name', 'Base', ...
+    sma = AddState(sma, 'Name', 'TrialStart0', ...
         'Timer', 1,...
         'StateChangeConditions', {'Tup', 'TrialStart'},...
-        'OutputActions', {});    
+        'OutputActions', {'PWM4',255,'PWM5',255});    
     sma = AddState(sma, 'Name', 'TrialStart', ...
-        'Timer', 2,...
+        'Timer', 1+S.ImagingPre,...
         'StateChangeConditions', {'Tup', 'StimulusDeliver'},...
-        'OutputActions', {'BNC2',1,'PWM3',255});
+        'OutputActions', laser_arg);
     sma = AddState(sma, 'Name', 'StimulusDeliver', ...
         'Timer', 0,...
         'StateChangeConditions', {'Tup', 'CueDelay'},...
-        'OutputActions', [laser_arg, sound_arg]);
+        'OutputActions', [sound_arg]);
     sma = AddState(sma, 'Name', 'CueDelay', ...
-        'Timer',S.GUI.CueDuration-S.GUI.PunishAmount,...
-        'StateChangeConditions', {'Tup', Tup_Action},...
-        'OutputActions', {});
+        'Timer',S.GUI.CueDuration,...
+        'StateChangeConditions', {'Tup', Tup_Action},...                                                                                                                                                                                                                        g on},...
+        'OutputActions',{});
     sma = AddState(sma, 'Name', 'Neutral', ...
         'Timer', S.GUI.US_Delay,...
         'StateChangeConditions', {'Tup', 'ITI'},...
@@ -150,11 +172,11 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'Punishment', ...
         'Timer',S.GUI.US_Delay,...
         'StateChangeConditions', {'Tup', 'DeliverPunishment'},...
-        'OutputActions', {});
+        'OutputActions',{});
     sma = AddState(sma, 'Name', 'DeliverPunishment', ...
         'Timer', S.GUI.PunishAmount,...
         'StateChangeConditions', {'Tup', 'ITI'},...
-        'OutputActions', shock_arg);
+        'OutputActions',  [shock_arg]);
     sma = AddState(sma, 'Name', 'ITI', ...
         'Timer', ITI(currentTrial),...
         'StateChangeConditions', {'Tup', 'exit'},...
