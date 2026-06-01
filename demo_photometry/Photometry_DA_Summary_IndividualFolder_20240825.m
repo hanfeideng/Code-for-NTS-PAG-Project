@@ -1,10 +1,5 @@
 %% Read Inper photometry data
-clear,clc; close all
 %% Extract the photometry signal
-FileFodler = pwd;
-tem_photometry = dir('*Camera*.csv');
-tem_photometry_trigger = dir('*Marker.csv');
-
 A0 = readtable(tem_photometry.name,'VariableNamingRule','preserve');
 VariableNames = A0.Properties.VariableNames
 
@@ -122,15 +117,6 @@ for mm=1:channel
     end
 end
 
-%% Color Map
-cMap0=hot(64); cMap0=cMap0(1:48,:); cN=4;  cMap00=[linspace(0,cMap0(1,1),cN)',zeros(cN,2)];
-cMap0 = [cMap00;cMap0]; cMap1=cMap0; cMap1(:,2)=cMap1(:,2); cMap2 = fliplr(cMap0);
-cMap = [flipud(cMap2);cMap1];
-ColorMap = cMap;
-ColorMap = colormap_xx(1);
-
-cc = linspecer(length(trial_type));
-
 %% visulize the photometry data (470nm)
 time = beh_F470_t; % ylim = [-15 15];
 AUC_Sum = [];
@@ -187,10 +173,7 @@ for mm=channel
 
     linkaxes([h],'xy');
     %%
-    set(gcf,'Render','Painter')
     saveas(gcf,['US_PSTH_NewPlot',num2str(mm),'.jpg']);
-    saveas(gcf,['US_PSTH_NewPlot',num2str(mm),'.pdf'])
-    print('-depsc',['US_PSTH_NewPlot_470channel',num2str(mm)])
 
 
     for jj = 1:2

@@ -1,9 +1,8 @@
 %% plot the neural trajectories in different trials
 % Xiong Xiao, 07/29/2024, Shanghai
-clear,clc; close all
 %% load the data
 tem = dir('NeuronSum_*.mat');
-cc = [hex2rgb({'999999'});hex2rgb({'CE0665'});hex2rgb({'F26522'})];%% 灰色，浅粉，深粉
+cc = [hex2rgb({'999999'});hex2rgb({'CE0665'});hex2rgb({'F26522'})];
 
 NeuronSum_All = [];
 NeuronSum_mean_All = [];
@@ -136,7 +135,4 @@ grid on
 view([48.295454545454561,14.372560975609757])
 xlabel('PC 1'); ylabel('PC 2'); zlabel('Time (s)'); 
 % set(gca,'TickDir','Out','box','off');
-% set(gca,'TickDir', 'out','xlim',[-5,20],'ylim',[-5,10],'FontSize', 16,'box','on');
-% axis tight;
-% print(gcf,['Ac_PCA_trial_along_time_new'],'-dpdf','-r0');
 
